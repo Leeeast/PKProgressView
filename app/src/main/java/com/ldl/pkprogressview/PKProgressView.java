@@ -7,10 +7,13 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.View;
+
+import androidx.annotation.RequiresApi;
 
 /**
  * Created by 12 on 2018/7/23.
@@ -119,6 +122,7 @@ public class PKProgressView extends View {
         setMeasuredDimension(width, mViewHeight);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -335,31 +339,50 @@ public class PKProgressView extends View {
     /**
      * 绘制进度
      */
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void drawProgress(Canvas canvas) {
-
         float[] leftRadiusArray = {mRadius, mRadius, 0f, 0f, 0f, 0f, mRadius, mRadius};
         float[] rightRadiusArray = {0f, 0f, mRadius, mRadius, mRadius, mRadius, 0f, 0f};
 
 
         boolean userAllRadiousArray = mProgress > (mProgressBarWidthWithoutFrame - mRadius) / mProgressBarWidthWithoutFrame;
-
-
-        mPaint.setColor(mProgressColor);
         float right = mProgress * mProgressBarWidthWithoutFrame - mRadius;
-        RectF rectF = new RectF(-mRadius, -mRadius, right, mRadius);
-        Path path = new Path();
-        path.addRoundRect(rectF, leftRadiusArray, Path.Direction.CW);
-//        canvas.drawRoundRect(rectF, mRectRoundRadius, mRectRoundRadius, mPaint);
-        canvas.drawPath(path, mPaint);
 
+        //第一种方法
         if (userAllRadiousArray) {
-            mPaint.setColor(Color.YELLOW);
-            RectF rightRect = new RectF(right, -mRadius, mProgressBarWidthWithoutFrame, mRadius);
+            //当进度大于右边的半径的时候，更换底部颜色
+            mPaint.setColor(mProgressColor);
+            canvas.drawRoundRect(new RectF(-mRadius, -mRadius, mProgressBarWidthWithoutFrame - mRadius, mRadius), mRadius, mRadius, mPaint);
+
+            mPaint.setColor(mProgressBankgroundColor);
+            RectF rightRectF = new RectF(right, -mRadius, mProgressBarWidthWithoutFrame - mRadius, mRadius);
             Path rightPath = new Path();
-            rightPath.addRoundRect(rightRect, rightRadiusArray, Path.Direction.CW);
+            rightPath.addRoundRect(rightRectF, rightRadiusArray, Path.Direction.CW);
             canvas.drawPath(rightPath, mPaint);
+
+        } else {
+            mPaint.setColor(mProgressColor);
+            RectF rectF = new RectF(-mRadius, -mRadius, right, mRadius);
+            Path path = new Path();
+            path.offset(mRadius, 0);
+            path.addRoundRect(rectF, leftRadiusArray, Path.Direction.CW);
+            path.offset(mRadius/2.5f, 0, path);
+//            path.addRoundRect(-mRadius, -mRadius, right, mRadius, leftRadiusArray, Path.Direction.CW);
+//            canvas.drawRoundRect(rectF, mRectRoundRadius, mRectRoundRadius, mPaint);
+            canvas.drawPath(path, mPaint);
         }
-        mPaint.setXfermode(null);
+
+
+//        if (userAllRadiousArray) {
+//            mPaint.setXfermode(null);
+//            mPaint.setColor(Color.MAGENTA);
+//            mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
+//            RectF rightRect = new RectF(mProgressBarWidthWithoutFrame - 2 * mRadius, -mRadius, mProgressBarWidthWithoutFrame - mRadius, mRadius);
+//            Path rightPath = new Path();
+//            rightPath.addRoundRect(rightRect, rightRadiusArray, Path.Direction.CW);
+//            canvas.drawPath(rightPath, mPaint);
+//        }
+//        mPaint.setXfermode(null);
     }
 
 

@@ -15,7 +15,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mPKProgressView = findViewById(R.id.pkprogressview);
-        mPKProgressView.setProgress(0.985f);
+        mPKProgressView.setProgress(0.02f);
         findViewById(R.id.btn_set_progress).setOnClickListener(this);
     }
 
