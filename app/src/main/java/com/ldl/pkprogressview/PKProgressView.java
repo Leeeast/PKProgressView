@@ -279,109 +279,49 @@ public class PKProgressView extends View {
     }
 
     /**
-     * 画半圆左侧的任意部分
-     */
-    private void drawLeftArc(Canvas canvas) {
-
-        float[] radiusArray = {mRadius, mRadius, 0f, 0f, 0f, 0f, mRadius, mRadius};
-        mPaint.setColor(mProgressColor);
-        RectF rectF = new RectF(-mRadius, -mRadius, 0, mRadius);
-        Path path = new Path();
-        path.addRoundRect(rectF, radiusArray, Path.Direction.CW);
-//        canvas.drawRoundRect(rectF, mRectRoundRadius, mRectRoundRadius, mPaint);
-        canvas.drawPath(path, mPaint);
-    }
-
-    /**
-     * 画中间矩形部分
-     */
-    private void drawCenterRect(Canvas canvas) {
-        float rectAndLeftArcMaxWidth = mProgressMaxWidth - mRadius;//所有进度条减去右边 就是左边和矩形
-
-        float progressBarWidthNowTemp = mProgressLoadingWidth < rectAndLeftArcMaxWidth ? mProgressLoadingWidth : rectAndLeftArcMaxWidth;
-        float rectWidth = progressBarWidthNowTemp - mRadius;//当前进度条减去左边半圆
-
-        rectWidth = rectWidth < rectAndLeftArcMaxWidth ? rectWidth : rectAndLeftArcMaxWidth;
-
-
-        Path path1 = new Path();
-        path1.moveTo(0, mRadius);
-        path1.lineTo(0, -mRadius);
-//        //中间带斜边
-//        path1.lineTo(rectWidth + 10, -mRadius);
-//        path1.lineTo(rectWidth - 10, mRadius);
-        //中间没有斜边，竖直方向
-        path1.lineTo(rectWidth, -mRadius);
-        path1.lineTo(rectWidth, mRadius);
-        path1.close();
-        canvas.drawPath(path1, mPaint);
-
-    }
-
-    /**
-     * 画半圆右侧的任意部分  分2个圆弧  1个三角形  demo图 见https://code.aliyun.com/hi31588535/outside_chain/raw/master/blog_custom_view_show_pic2.png
-     */
-    private void drawRightArc(Canvas canvas) {
-
-        float radiusTemp = mRadius + mProgressBarFrameHeight;
-        RectF rectF_Center = new RectF(-radiusTemp, -radiusTemp, mProgressBarWidth - radiusTemp, radiusTemp);
-
-//        mPaint.setColor(mFrameColor);
-//        canvas.drawRoundRect(rectF_Center, mRectRoundRadius, mRectRoundRadius, mPaint);
-
-        rectF_Center.inset(mRadius / 2, mRadius / 2);
-        mPaint.setColor(mProgressColor);
-        canvas.drawRoundRect(rectF_Center, mRadius, mRadius, mPaint);
-
-    }
-
-
-    /**
      * 绘制进度
      */
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void drawProgress(Canvas canvas) {
         float[] leftRadiusArray = {mRadius, mRadius, 0f, 0f, 0f, 0f, mRadius, mRadius};
         float[] rightRadiusArray = {0f, 0f, mRadius, mRadius, mRadius, mRadius, 0f, 0f};
-
-
         boolean userAllRadiousArray = mProgress > (mProgressBarWidthWithoutFrame - mRadius) / mProgressBarWidthWithoutFrame;
+        boolean userLeftRadiousArray = mProgress < mRadius / mProgressBarWidthWithoutFrame;
+
         float right = mProgress * mProgressBarWidthWithoutFrame - mRadius;
 
-        //第一种方法
-        if (userAllRadiousArray) {
-            //当进度大于右边的半径的时候，更换底部颜色
+        if (userLeftRadiousArray) {
+            //当进度小于左边的半径的时候
             mPaint.setColor(mProgressColor);
-            canvas.drawRoundRect(new RectF(-mRadius, -mRadius, mProgressBarWidthWithoutFrame - mRadius, mRadius), mRadius, mRadius, mPaint);
 
+            RectF rectF = new RectF(-mRadius, -mRadius, mRadius, mRadius);
+            float startAngle = (float) (180 - Math.asin((mRadius + right) / mRadius) * 180 / Math.PI);
+            float sweepAngle = (float) (180 - (90 - Math.asin((mRadius + right) / mRadius) * 180 / Math.PI) * 2);
+            canvas.drawArc(rectF, startAngle, sweepAngle, false, mPaint);
+        } else if (userAllRadiousArray) {
+            //当进度大于右边的半径
+            mPaint.setColor(mProgressColor);
+            RectF rectF = new RectF(-mRadius, -mRadius, mProgressBarWidthWithoutFrame - mRadius, mRadius);
+            Path path = new Path();
+            path.addRoundRect(rectF, mRadius, mRadius, Path.Direction.CW);
+            canvas.drawPath(path, mPaint);
+            //绘制右边部分半圆
             mPaint.setColor(mProgressBankgroundColor);
-            RectF rightRectF = new RectF(right, -mRadius, mProgressBarWidthWithoutFrame - mRadius, mRadius);
-            Path rightPath = new Path();
-            rightPath.addRoundRect(rightRectF, rightRadiusArray, Path.Direction.CW);
-            canvas.drawPath(rightPath, mPaint);
+            rectF.left = mProgressBarWidthWithoutFrame - mRadius * 3;
+            rectF.top = -mRadius;
+            rectF.right = mProgressBarWidthWithoutFrame - mRadius;
+            rectF.bottom = mRadius;
 
+            float startAngle = (float) (360 -  Math.acos((2 * mRadius + right - mProgressBarWidthWithoutFrame) / mRadius) * 180 / Math.PI);
+            float sweepAngle = (float) ((Math.acos((2 * mRadius + right - mProgressBarWidthWithoutFrame) / mRadius) * 180 / Math.PI) * 2);
+            canvas.drawArc(rectF, startAngle, sweepAngle, false, mPaint);
         } else {
             mPaint.setColor(mProgressColor);
             RectF rectF = new RectF(-mRadius, -mRadius, right, mRadius);
             Path path = new Path();
-            path.offset(mRadius, 0);
-//            path.addRoundRect(rectF, leftRadiusArray, Path.Direction.CW);
-            path.addRoundRect(-mRadius, -mRadius, right, mRadius, leftRadiusArray, Path.Direction.CW);
-//            canvas.drawRoundRect(rectF, mRectRoundRadius, mRectRoundRadius, mPaint);
+            path.addRoundRect(rectF, leftRadiusArray, Path.Direction.CW);
             canvas.drawPath(path, mPaint);
         }
-
-
-//        if (userAllRadiousArray) {
-//            mPaint.setXfermode(null);
-//            mPaint.setColor(Color.MAGENTA);
-//            mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
-//            RectF rightRect = new RectF(mProgressBarWidthWithoutFrame - 2 * mRadius, -mRadius, mProgressBarWidthWithoutFrame - mRadius, mRadius);
-//            Path rightPath = new Path();
-//            rightPath.addRoundRect(rightRect, rightRadiusArray, Path.Direction.CW);
-//            canvas.drawPath(rightPath, mPaint);
-//        }
-//        mPaint.setXfermode(null);
     }
 
 
