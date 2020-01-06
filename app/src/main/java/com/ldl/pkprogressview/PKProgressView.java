@@ -365,9 +365,8 @@ public class PKProgressView extends View {
             RectF rectF = new RectF(-mRadius, -mRadius, right, mRadius);
             Path path = new Path();
             path.offset(mRadius, 0);
-            path.addRoundRect(rectF, leftRadiusArray, Path.Direction.CW);
-            path.offset(mRadius/2.5f, 0, path);
-//            path.addRoundRect(-mRadius, -mRadius, right, mRadius, leftRadiusArray, Path.Direction.CW);
+//            path.addRoundRect(rectF, leftRadiusArray, Path.Direction.CW);
+            path.addRoundRect(-mRadius, -mRadius, right, mRadius, leftRadiusArray, Path.Direction.CW);
 //            canvas.drawRoundRect(rectF, mRectRoundRadius, mRectRoundRadius, mPaint);
             canvas.drawPath(path, mPaint);
         }
