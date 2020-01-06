@@ -1,15 +1,20 @@
 package com.ldl.pkprogressview;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 
@@ -72,6 +77,42 @@ public class PKProgressView extends View {
 
     private int mDuration = 5 * 1000;//动画执行时间
     private Context mContext;
+    private Canvas mCanvas;
+
+    private int[] mAnimRes = {
+            R.drawable.pk_light0,
+            R.drawable.pk_light1,
+            R.drawable.pk_light2,
+            R.drawable.pk_light3,
+            R.drawable.pk_light4,
+            R.drawable.pk_light5,
+            R.drawable.pk_light6,
+            R.drawable.pk_light7,
+            R.drawable.pk_light8,
+            R.drawable.pk_light9,
+            R.drawable.pk_light10,
+            R.drawable.pk_light11,
+            R.drawable.pk_light12,
+            R.drawable.pk_light13,
+            R.drawable.pk_light14,
+            R.drawable.pk_light15,
+            R.drawable.pk_light16,
+            R.drawable.pk_light17,
+            R.drawable.pk_light18,
+            R.drawable.pk_light19,
+            R.drawable.pk_light20,
+            R.drawable.pk_light21,
+            R.drawable.pk_light22,
+            R.drawable.pk_light23,
+            R.drawable.pk_light24,
+            R.drawable.pk_light25,
+            R.drawable.pk_light26,
+            R.drawable.pk_light27,
+            R.drawable.pk_light28,
+            R.drawable.pk_light29,
+            R.drawable.pk_light30,
+    };
+    private int mAnimIndex = 0;
 
     public PKProgressView(Context context) {
         this(context, null);
@@ -100,6 +141,19 @@ public class PKProgressView extends View {
         mScreenWidth = getScreenWidth(mContext);
         mScreenHeight = getScreenHeight(mContext);
 
+        ValueAnimator valueAnimator = ValueAnimator.ofInt(0, 31);
+        valueAnimator.setDuration(3100);
+        valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        valueAnimator.setRepeatMode(ValueAnimator.RESTART);
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                int animatedValue = (int) animation.getAnimatedValue();
+                Log.i(TAG, "animatedValue:" + animatedValue);
+                drawLight(mCanvas);
+            }
+        });
+        valueAnimator.start();
     }
 
     @Override
@@ -126,7 +180,9 @@ public class PKProgressView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
+        if (mCanvas == null) {
+            mCanvas = canvas;
+        }
         if (mHasCoordinate) {
             drawCoordinate(canvas);
             drawCoordinateOnCenter(canvas);
@@ -167,28 +223,40 @@ public class PKProgressView extends View {
 
         mPaint.setStyle(Paint.Style.FILL);
         mPaint.setColor(mProgressColor);
-        //
 
-        //canvas.translate(-(mRadiusMax-mArcLeftWidth),0);//向左偏移半圆剩余的宽  保证左边对齐
 
-//        if (mProgress <= 0) {
-//            return;
-//        }
-//        if (mProgress <= 0.02) {
-//            drawLeftArc(canvas);
-//
-//        } else if (mProgress > 0.02 && mProgress < 0.98) {
-//            drawLeftArc(canvas);
-//            drawCenterRect(canvas);
-//
-//        } else {
-//            drawLeftArc(canvas);
-//            drawCenterRect(canvas);
-//            drawRightArc(canvas);
-//        }
-        // Log.d(TAG, "onDraw: mProgressNow:"+mProgressNow);
         drawProgress(canvas);
+    }
 
+    /**
+     * 绘制中间闪烁
+     *
+     * @param canvas
+     */
+    private void drawLight(Canvas canvas) {
+        if (canvas != null && !canvas.isOpaque()) {
+            if (mAnimIndex >= mAnimRes.length) {
+                mAnimIndex = 0;
+            }
+            //1.获取图片
+            Bitmap lightBitmap = BitmapFactory.decodeResource(mContext.getResources(), mAnimRes[mAnimIndex++]);
+
+
+            //2.绘制图片
+            float currentDistance = mProgress * mProgressBarWidthWithoutFrame - mRadius;
+            int bitmapWidth = lightBitmap.getWidth();
+            int bitmapHeight = lightBitmap.getHeight();
+            Rect srcRect = new Rect(0, 0, bitmapWidth, bitmapHeight);
+
+            int desWidth = this.dp2px(175);
+            int desHeight = this.dp2px(20);
+            RectF desRectF = new RectF(currentDistance - desWidth / 2, -desHeight / 2, currentDistance + desWidth / 2, desHeight / 2);
+
+            canvas.drawBitmap(lightBitmap, srcRect, desRectF, mPaint);
+
+            //3.释放图片
+            lightBitmap.recycle();
+        }
     }
 
     /**
@@ -288,15 +356,15 @@ public class PKProgressView extends View {
         boolean userAllRadiousArray = mProgress > (mProgressBarWidthWithoutFrame - mRadius) / mProgressBarWidthWithoutFrame;
         boolean userLeftRadiousArray = mProgress < mRadius / mProgressBarWidthWithoutFrame;
 
-        float right = mProgress * mProgressBarWidthWithoutFrame - mRadius;
+        float currentDistance = mProgress * mProgressBarWidthWithoutFrame - mRadius;
 
         if (userLeftRadiousArray) {
             //当进度小于左边的半径的时候
             mPaint.setColor(mProgressColor);
 
             RectF rectF = new RectF(-mRadius, -mRadius, mRadius, mRadius);
-            float startAngle = (float) (180 - Math.asin((mRadius + right) / mRadius) * 180 / Math.PI);
-            float sweepAngle = (float) (180 - (90 - Math.asin((mRadius + right) / mRadius) * 180 / Math.PI) * 2);
+            float startAngle = (float) (180 - Math.asin((mRadius + currentDistance) / mRadius) * 180 / Math.PI);
+            float sweepAngle = (float) (180 - (90 - Math.asin((mRadius + currentDistance) / mRadius) * 180 / Math.PI) * 2);
             canvas.drawArc(rectF, startAngle, sweepAngle, false, mPaint);
         } else if (userAllRadiousArray) {
             //当进度大于右边的半径
@@ -312,12 +380,12 @@ public class PKProgressView extends View {
             rectF.right = mProgressBarWidthWithoutFrame - mRadius;
             rectF.bottom = mRadius;
 
-            float startAngle = (float) (360 -  Math.acos((2 * mRadius + right - mProgressBarWidthWithoutFrame) / mRadius) * 180 / Math.PI);
-            float sweepAngle = (float) ((Math.acos((2 * mRadius + right - mProgressBarWidthWithoutFrame) / mRadius) * 180 / Math.PI) * 2);
+            float startAngle = (float) (360 - Math.acos((2 * mRadius + currentDistance - mProgressBarWidthWithoutFrame) / mRadius) * 180 / Math.PI);
+            float sweepAngle = (float) ((Math.acos((2 * mRadius + currentDistance - mProgressBarWidthWithoutFrame) / mRadius) * 180 / Math.PI) * 2);
             canvas.drawArc(rectF, startAngle, sweepAngle, false, mPaint);
         } else {
             mPaint.setColor(mProgressColor);
-            RectF rectF = new RectF(-mRadius, -mRadius, right, mRadius);
+            RectF rectF = new RectF(-mRadius, -mRadius, currentDistance, mRadius);
             Path path = new Path();
             path.addRoundRect(rectF, leftRadiusArray, Path.Direction.CW);
             canvas.drawPath(path, mPaint);
